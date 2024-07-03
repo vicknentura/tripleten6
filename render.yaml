@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: my_web_service
+    env: python-3.12.4
+    git_repo: https://github.com/vicknentura/tripleten6.git
+    system_packages:
+      - gfortran
+    branches:
+      - main
+    build_command: "pip install -r requirements.txt"
+    start_command: "gunicorn my_web_service:app"
+    instance_type: "small"
