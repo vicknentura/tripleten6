@@ -8,5 +8,5 @@ services:
     branches:
       - main
     build_command: "pip install -r requirements.txt"
-    start_command: "gunicorn my_web_service:app"
+    start_command: "bokeh serve --show app.py"
     instance_type: "small"
