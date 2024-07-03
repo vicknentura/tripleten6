@@ -66,16 +66,6 @@ df_dropoff.dtypes
 df_trips['company_name'] = df_trips['company_name'].str.replace(r'\d{4} - \d{5}', '', regex=True)
 
 
-
-# Assuming df_ohare_loop is your DataFrame
-df_ohare_loop = df_ohare_loop.sort_values(by='number_of_trips', ascending=False)
-
-# Now df_ohare_loop is sorted by the 'average_trips' column in descending order
-print("The most popular destinations of taxi rides in Chicago in November 2017 were:")
-display(df_ohare_loop.head(10))
-
-
-
 from bokeh.models import ColumnDataSource, Whisker
 from bokeh.plotting import figure, show
 from bokeh.transform import factor_cmap, jitter
@@ -105,7 +95,15 @@ p.scatter(jitter("weather_conditions", 0.3, range=p.x_range), "duration_seconds"
 
 show(p)
 
+from bokeh.io import show
+from bokeh.models import Div
 
+div = Div(text="""Your <a href="https://en.wikipedia.org/wiki/HTML">HTML</a>-supported text is initialized with the <b>text</b> argument.  The
+remaining div arguments are <b>width</b> and <b>height</b>. For this example, those values
+are <i>200</i> and <i>100</i>, respectively.""",
+width=200, height=100)
+
+show(div)
 
 # Compagnies de taxi visualisation deux (Bokeh scatter with markers = ['weather_conditions'], x = ['duration_seconds'], y = ['time'])
 #https://docs.bokeh.org/en/latest/docs/examples/basic/data/transform_markers.html
