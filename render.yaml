@@ -3,7 +3,8 @@ services:
     name: my_web_service
     env: 
       python: 3.12.4
-      FC: C:/Program Files (x86)/Intel/oneAPI/setvars
+      FFLAGS: "-03 -xHost -m64 -I/opt/intel/Compiler/2024.2/include"
+      FC: C:/Program Files (x86)/Intel/oneAPI/compiler/2024.2/bin/ifort
     git_repo: https://github.com/vicknentura/tripleten6.git
     system_packages:
       - gfortran
