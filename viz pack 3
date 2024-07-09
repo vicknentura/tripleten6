@@ -1,0 +1,324 @@
+#pandas_groupby
+from bokeh.palettes import Spectral5
+from bokeh.plotting import figure, show
+from bokeh.sampledata.autompg import autompg as df
+from bokeh.transform import factor_cmap
+
+df.cyl = df.cyl.astype(str)
+group = df.groupby('cyl')
+
+cyl_cmap = factor_cmap('cyl', palette=Spectral5, factors=sorted(df.cyl.unique()))
+
+p = figure(height=350, x_range=group, title="MPG by # Cylinders",
+           toolbar_location=None, tools="")
+
+p.vbar(x='cyl', top='mpg_mean', width=1, source=group,
+       line_color=cyl_cmap, fill_color=cyl_cmap)
+
+p.y_range.start = 0
+p.xgrid.grid_line_color = None
+p.xaxis.axis_label = "some stuff"
+p.xaxis.major_label_orientation = 1.2
+p.outline_line_color = None
+
+show(p)
+
+
+#nested
+from bokeh.models import ColumnDataSource, FactorRange
+from bokeh.palettes import MediumContrast3
+from bokeh.plotting import figure, show
+from bokeh.transform import factor_cmap
+
+fruits = ['Apples', 'Pears', 'Nectarines', 'Plums', 'Grapes', 'Strawberries']
+years = ['2015', '2016', '2017']
+
+data = {'fruits' : fruits,
+        '2015'   : [2, 1, 4, 3, 2, 4],
+        '2016'   : [5, 3, 3, 2, 4, 6],
+        '2017'   : [3, 2, 4, 4, 5, 3]}
+
+# this creates [ ("Apples", "2015"), ("Apples", "2016"), ("Apples", "2017"), ("Pears", "2015), ... ]
+x = [ (fruit, year) for fruit in fruits for year in years ]
+counts = sum(zip(data['2015'], data['2016'], data['2017']), ()) # like an hstack
+
+source = ColumnDataSource(data=dict(x=x, counts=counts))
+
+p = figure(x_range=FactorRange(*x), height=350, title="Fruit Counts by Year",
+           toolbar_location=None, tools="",output_backend="svg")
+
+p.vbar(x='x', top='counts', width=0.9, source=source, line_color="white",
+       fill_color=factor_cmap('x', palette=MediumContrast3, factors=years, start=1, end=2))
+
+p.y_range.start = 0
+p.x_range.range_padding = 0.1
+p.xaxis.major_label_orientation = 1
+p.xgrid.grid_line_color = None
+
+show(p)
+  
+
+
+#pandas_grouby x nested
+from bokeh.palettes import MediumContrast5
+from bokeh.plotting import figure, show
+from bokeh.sampledata.autompg import autompg_clean as df
+from bokeh.transform import factor_cmap
+
+df.cyl = df.cyl.astype(str)
+df.yr = df.yr.astype(str)
+
+group = df.groupby(['cyl', 'mfr'])
+
+index_cmap = factor_cmap('cyl_mfr', palette=MediumContrast5, factors=sorted(df.cyl.unique()), end=1)
+
+p = figure(width=800, height=300, title="Mean MPG by # Cylinders and Manufacturer",
+           x_range=group, toolbar_location=None, tooltips=[("MPG", "@mpg_mean"), ("Cyl, Mfr", "@cyl_mfr")])
+
+p.vbar(x='cyl_mfr', top='mpg_mean', width=1, source=group,
+       line_color="white", fill_color=index_cmap )
+
+p.y_range.start = 0
+p.x_range.range_padding = 0.05
+p.xgrid.grid_line_color = None
+p.xaxis.axis_label = "Manufacturer grouped by # Cylinders"
+p.xaxis.major_label_orientation = 1.2
+p.outline_line_color = None
+
+show(p)
+
+
+
+
+#Whisker
+from bokeh.models import ColumnDataSource, Whisker
+from bokeh.plotting import figure, show
+from bokeh.sampledata.autompg2 import autompg2 as df
+from bokeh.transform import factor_cmap, jitter
+
+classes = list(sorted(df["class"].unique()))
+
+p = figure(height=400, x_range=classes, background_fill_color="#efefef",
+           title="Car class vs HWY mpg with quantile ranges")
+p.xgrid.grid_line_color = None
+
+g = df.groupby("class")
+upper = g.hwy.quantile(0.80)
+lower = g.hwy.quantile(0.20)
+source = ColumnDataSource(data=dict(base=classes, upper=upper, lower=lower))
+
+error = Whisker(base="base", upper="upper", lower="lower", source=source,
+                level="annotation", line_width=2)
+error.upper_head.size=20
+error.lower_head.size=20
+p.add_layout(error)
+
+p.scatter(jitter("class", 0.3, range=p.x_range), "hwy", source=df,
+          alpha=0.5, size=13, line_color="white",
+          color=factor_cmap("class", "Light7", classes))
+
+show(p)
+
+
+
+#band
+import numpy as np
+import pandas as pd
+
+from bokeh.models import Band, ColumnDataSource
+from bokeh.plotting import figure, show
+
+# Create some random data
+x = np.random.random(2500) * 140 +20
+y = np.random.normal(size=2500) * 2 + 6 * np.log(x)
+
+df = pd.DataFrame(data=dict(x=x, y=y)).sort_values(by="x")
+
+df2 = df.y.rolling(window=300).agg({"y_mean": "mean", "y_std": "std"})
+
+df = pd.concat([df, df2], axis=1)
+df["lower"] = df.y_mean - df.y_std
+df["upper"] = df.y_mean + df.y_std
+
+source = ColumnDataSource(df.reset_index())
+
+p = figure(tools="", toolbar_location=None, x_range=(40, 160))
+p.title.text = "Rolling Standard Deviation"
+p.xgrid.grid_line_color=None
+p.ygrid.grid_line_alpha=0.5
+
+p.scatter(x="x", y="y", color="blue", marker="dot", size=10, alpha=0.4, source=source)
+
+p.line("x", "y_mean", line_dash=(10, 7), line_width=2, source=source)
+
+band = Band(base="x", lower="lower", upper="upper", source=source,
+            fill_alpha=0.3, fill_color="yellow", line_color="black")
+p.add_layout(band)
+
+show(p)
+
+
+#intervals
+from bokeh.models import ColumnDataSource
+from bokeh.plotting import figure, show
+from bokeh.sampledata.sprint import sprint
+
+df = sprint.copy()  # since we are modifying sampledata
+
+df.Year = df.Year.astype(str)
+group = df.groupby('Year')
+source = ColumnDataSource(group)
+
+p = figure(y_range=group, x_range=(9.5,12.7), width=400, height=550, toolbar_location=None,
+           title="Time Spreads for Sprint Medalists (by Year)")
+p.hbar(y="Year", left='Time_min', right='Time_max', height=0.4, source=source)
+
+p.ygrid.grid_line_color = None
+p.xaxis.axis_label = "Time (seconds)"
+p.outline_line_color = None
+
+show(p)
+  
+
+
+#transform_jitter
+from bokeh.layouts import column
+from bokeh.plotting import figure, show
+from bokeh.sampledata.autompg import autompg
+from bokeh.transform import jitter
+
+years = sorted(autompg.yr.unique())
+
+p1 = figure(width=600, height=300, title="Years vs mpg without jittering")
+p1.xgrid.grid_line_color = None
+p1.xaxis.ticker = years
+
+p1.scatter(x='yr', y='mpg', size=9, alpha=0.4, source=autompg)
+
+p2 = figure(width=600, height=300, title="Years vs mpg with jittering")
+p2.xgrid.grid_line_color = None
+p2.xaxis.ticker = years
+
+p2.scatter(x=jitter('yr', 0.4), y='mpg', size=9, alpha=0.4, source=autompg)
+
+show(column(p1, p2))
+
+
+#tramsform_markers
+from bokeh.plotting import figure, show
+from bokeh.sampledata.penguins import data
+from bokeh.transform import factor_cmap, factor_mark
+
+SPECIES = sorted(data.species.unique())
+MARKERS = ['hex', 'circle_x', 'triangle']
+
+p = figure(title = "Penguin size", background_fill_color="#fafafa")
+p.xaxis.axis_label = 'Flipper Length (mm)'
+p.yaxis.axis_label = 'Body Mass (g)'
+
+p.scatter("flipper_length_mm", "body_mass_g", source=data,
+          legend_group="species", fill_alpha=0.4, size=12,
+          marker=factor_mark('species', MARKERS, SPECIES),
+          color=factor_cmap('species', 'Category10_3', SPECIES))
+
+p.legend.location = "top_left"
+p.legend.title = "Species"
+
+show(p)
+
+
+
+
+#span
+from datetime import datetime as dt
+
+from bokeh.models import Span
+from bokeh.plotting import figure, show
+from bokeh.sampledata.daylight import daylight_warsaw_2013
+
+p = figure(height=350, x_axis_type="datetime", y_axis_type="datetime",
+           title="2013 Sunrise and Sunset in Warsaw with DST dates marked",
+           y_axis_label="Time of Day", background_fill_color="#fafafa")
+p.y_range.start = 0
+p.y_range.end = 24 * 60 * 60 * 1000
+
+p.line("Date", "Sunset", source=daylight_warsaw_2013,
+       color='navy', line_dash="dotted", line_width=2, legend_label="Sunset")
+p.line("Date", "Sunrise", source=daylight_warsaw_2013,
+       color='orange', line_dash="dashed", line_width=2, legend_label="Sunrise")
+
+dst_start = Span(location=dt(2013, 3, 31, 2, 0, 0), dimension='height',
+                 line_color='#009E73', line_width=5)
+p.add_layout(dst_start)
+
+dst_end = Span(location=dt(2013, 10, 27, 3, 0, 0), dimension='height',
+               line_color='#009E73', line_width=5)
+p.add_layout(dst_end)
+
+p.yaxis.formatter.days = "%Hh"
+p.xgrid.grid_line_color = None
+
+show(p)
+  
+
+  
+#dodged
+from bokeh.models import ColumnDataSource
+from bokeh.plotting import figure, show
+from bokeh.transform import dodge
+
+fruits = ['Apples', 'Pears', 'Nectarines', 'Plums', 'Grapes', 'Strawberries']
+years = ['2015', '2016', '2017']
+
+data = {'fruits' : fruits,
+        '2015'   : [2, 1, 4, 3, 2, 4],
+        '2016'   : [5, 3, 3, 2, 4, 6],
+        '2017'   : [3, 2, 4, 4, 5, 3]}
+
+source = ColumnDataSource(data=data)
+
+p = figure(x_range=fruits, y_range=(0, 10), title="Fruit Counts by Year",
+           height=350, toolbar_location=None, tools="")
+
+p.vbar(x=dodge('fruits', -0.25, range=p.x_range), top='2015', source=source,
+       width=0.2, color="#c9d9d3", legend_label="2015")
+
+p.vbar(x=dodge('fruits',  0.0,  range=p.x_range), top='2016', source=source,
+       width=0.2, color="#718dbf", legend_label="2016")
+
+p.vbar(x=dodge('fruits',  0.25, range=p.x_range), top='2017', source=source,
+       width=0.2, color="#e84d60", legend_label="2017")
+
+p.x_range.range_padding = 0.1
+p.xgrid.grid_line_color = None
+p.legend.location = "top_left"
+p.legend.orientation = "horizontal"
+
+show(p)
+
+
+  
+#stacked_area
+import numpy as np
+import pandas as pd
+
+from bokeh.palettes import tol
+from bokeh.plotting import figure, show
+
+N = 10
+df = pd.DataFrame(np.random.randint(10, 100, size=(15, N))).add_prefix('y')
+
+p = figure(x_range=(0, len(df)-1), y_range=(0, 800))
+p.grid.minor_grid_line_color = '#eeeeee'
+
+names = [f"y{i}" for i in range(N)]
+p.varea_stack(stackers=names, x='index', color=tol['Sunset'][N], legend_label=names, source=df)
+
+p.legend.orientation = "horizontal"
+p.legend.background_fill_color = "#fafafa"
+
+show(p)
+
+  
+  
+#https://docs.bokeh.org/en/latest/docs/gallery.html
