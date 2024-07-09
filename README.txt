@@ -1,56 +1,44 @@
-This code is a data analysis project that explores a dataset of video games. Here's a breakdown of what each section does:
+Title: Triple Ten Data Analysis (Python Script)
 
-Section 1: Importing libraries and loading data
+Description:
 
-Imports the pandas and matplotlib libraries.
-Loads a CSV file called games.csv into a Pandas dataframe called games.
-Section 2: Data cleaning
+This Python script analyzes data provided by Triple Ten, likely related to taxi trips. It performs the following tasks:
 
-Converts all column names to lowercase.
-Drops rows with missing values in specific columns (year_of_release, critic_score, user_score, and rating).
-Section 3: Total games sales
+Data Loading: Reads CSV files containing trip information (df_trips), Ohare loop data (df_ohare_loop), and dropoff data (df_dropoff).
+Quality Assurance (QA):
+Checks each DataFrame for the number of rows and columns (check_values function).
+Counts zeros, null/NaN values, and inf/-inf values.
+Data Cleaning:
+Drops rows from df_dropoff containing zeros to avoid processing issues.
+Splits the 'start_ts' column in df_dropoff into separate 'date' and 'time' columns.
+Converts the 'start_ts' column in df_dropoff to datetime format and extracts the day.
+Converts the 'date' column in df_dropoff to datetime format.
+Assumes df_trips has a 'company_name' column and removes unwanted characters using regular expressions.
+Data Visualization (Bokeh):
+Creates a scatter plot showing weather condition vs. trip duration with quantile ranges (using factor_cmap for color mapping).
+Generates an informative HTML snippet using Bokeh's Div class.
+Creates a scatter plot with markers representing weather conditions, duration (seconds) on the x-axis, and start time on the y-axis (using factor_mark for markers and factor_cmap for color mapping).
+Requirements:
 
-Groups the data by game name and calculates the total sales for each game across different regions (NA, EU, JP, and Other).
-Adds a new column ww_total that sums up the sales across all regions.
-Displays the resulting dataframe and its information.
-Section 4: Histogram of games released per year
+Python 3.x
+pandas
+requests
+BeautifulSoup
+Bokeh
+scipy
+numpy
+matplotlib
+seaborn
+tabulate
+Instructions:
 
-Creates a histogram of the number of games released per year using the cleaned year_of_release column.
-Adds data labels to the histogram.
-Section 5: Total platform sales
+Install the required libraries using pip install pandas requests beautifulsoup4 bokeh scipy numpy matplotlib seaborn tabulate.
+Place the script and the CSV files (moved_project_sql_result_01.csv, moved_project_sql_result_04.csv, moved_project_sql_result_07.csv) in the same directory.
+Run the script from the command line using python script_name.py.
+Notes:
 
-Groups the data by platform and calculates the total sales for each platform across different regions.
-Adds a new column ww_total that sums up the sales across all regions.
-Displays the resulting dataframe and its information.
-Section 6: Bar chart of total sales by platform
+This script assumes specific column names and data formats. You may need to modify it based on your actual data.
+Consider adding comments within the code to improve readability and maintainability.
+Additional Information:
 
-Sorts the data by total sales in descending order.
-Creates a horizontal bar chart of the total sales by platform.
-Adds labels to each bar and sets the title, labels, and figure size.
-Section 7: Formerly popular platforms with zero sales
-
-Finds platforms that used to be popular (had sales in the past) but now have zero sales.
-Prints the list of formerly popular platforms with zero sales.
-Section 8: Calculating total sales and filling NaN values
-
-Calculates the total sales for each game by summing up the sales across different regions.
-Fills NaN values in the year_of_release and total_sales columns with 0.
-Converts the year_of_release and total_sales columns to integers.
-Filters out games with a year_of_release of 0.
-Section 9: Plotting total sales by year of release and platform
-
-Groups the data by year_of_release and platform, and sums up the total_sales.
-Plots the total sales by year of release for each platform as separate series.
-Section 10: Slicing the data
-
-Slices the data to include only games released in 1995 or later.
-Displays the sliced dataframe.
-Section 11: Top 10 platforms by total sales
-
-Groups the sliced data by platform and calculates the total sales for each platform.
-Finds the top 10 platforms by total sales using the nlargest method.
-Section 12: Calculating slope of total sales by year
-
-Groups the sliced data by platform and year of release, and calculates the total sales for each platform-year combination.
-Calculates the slope of the total sales by year for each platform using linear regression.
-Displays the resulting dataframe.
+The script utilizes Bokeh for interactive visualizations. Refer to the Bokeh documentation (https://bokeh.org/) for more details.
